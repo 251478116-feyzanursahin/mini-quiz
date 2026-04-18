@@ -7,6 +7,11 @@ Proje: mini-quiz
 # 2. "answer" komutunu çalıştır
 # 3. Dosya işlemlerini iyileştir
 
+# V2 TASKS
+# 1. Geçersiz soru ID kontrolü eklendi
+# 2. Listeleme çıktısı formatı iyileştirildi (id | question)
+# 3. Boş veri durumunda kullanıcıya özel mesaj eklendi
+
 import sys
 import os
 
@@ -30,13 +35,20 @@ def init():
 
 def add(question, answer):
 
-    if not os.path.exists(".miniquiz/questions.dat"):
+    path = ".miniquiz/questions.dat"
+
+    if not os.path.exists(path):
         return "Error: Data not initialized."
 
-    file = open(".miniquiz/questions.dat", "a")
-    line = "1|" + question + "|" + answer + "\n"
-    file.write(line)
-    file.close()
+    with open(path, "r") as file:
+        lines = file.readlines()
+
+    new_id = len(lines) + 1
+
+    with open(path, "a") as file:
+        line = str(new_id) + "|" + question + "|" + answer + "\n"
+        file.write(line)
+
     return "Question added"
 
 # Fonksiyonun ana programı
@@ -67,7 +79,7 @@ def main():
             print("Error: Missing parameters.")
             return
 
-        question = sys.argv[2]
+        question_id = sys.argv[2]
         user_answer = sys.argv[3]
 
         path = ".miniquiz/questions.dat"
@@ -79,17 +91,20 @@ def main():
         with open(path, "r") as file:
             lines = file.readlines()
 
+            found = False
+
             for line in lines:
                 parts = line.strip().split("|")
-                if parts[1] == question:
+                if parts[0] == question_id:
+                found = True
                     if parts[2].lower() == user_answer.lower():
                         print("Correct!")
                     else:
                         print("Wrong answer.")
                     return
 
-            print("Question not found.")
-        return
+            if not found:
+                print("Error: Invalid question ID.")
 
     if command == "list":
         path = ".miniquiz/questions.dat"
@@ -106,7 +121,7 @@ def main():
             else:
                 for line in lines:
                     parts = line.strip().split("|")
-                    print("Question:", parts[1])
+                    print(parts[0] + " | " + parts[1])
         return
     print("Error: Unknown command.")
 
